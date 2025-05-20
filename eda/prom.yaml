@@ -1,0 +1,181 @@
+
+services:
+# changer: ENV,credentials, ...
+#    product-service:
+##      container_name: product_service
+#      build:
+#        context: ./product
+#        dockerfile: Dockerfile
+#      ports:
+#        - "4002:4002"
+#      environment:
+#        - SPRING_PROFILES_ACTIVE=dev
+#        - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-service:5432/mydb
+#        - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=prometheus
+#      depends_on:
+#        - postgres-service
+#        - rabbitmq-service
+#        - redis-service
+#      networks:
+#        - java-prom
+        
+    order-service:
+#      container_name: order_service
+      build:
+        context: ./order
+        dockerfile: Dockerfile
+      ports:
+        - "4003:4003"
+      environment:
+        - SPRING_PROFILES_ACTIVE=dev
+        - SPRING_DATASOURCE_URL=mongodb://localhost:27017/mydb
+        - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=prometheus
+      depends_on:
+        - mongo-service
+        - rabbitmq-service
+        - redis-service
+      networks:
+        - java-prom
+
+    postgres-service:
+      image: postgres:16-alpine
+#      container_name: postgres_service
+      environment:
+        POSTGRES_USER: myuser
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: mydb
+      ports:
+        - "5433:5432"
+      volumes:
+        - postgres_data:/data/postgres
+      networks:
+        - java-prom
+
+    postgres_exporter:
+      image: bitnami/postgres-exporter:0.17.1-debian-12-r1
+#      container_name: postgres_exporter
+      environment:
+        DATA_SOURCE_NAME: "postgresql://myuser:password@postgres-service:5432/mydb?sslmode=disable"
+      ports:
+        - "9187:9187"
+      depends_on:
+        - postgres-service
+      networks:
+        - java-prom
+
+    mongo-service:
+      container_name: mongo_service
+      image: mongo:4.4.14-rc0-focal
+      restart: always
+      ports:
+        - "27018:27017"
+      volumes:
+        - mongo_data:/data/db
+      networks:
+        - java-prom
+    #    environment:
+    #      MONGO_INITDB_ROOT_USERNAME: root
+    #      MONGO_INITDB_ROOT_PASSWORD:
+
+    # MongoDB Exporter pour Prometheus
+    mongo-exporter:
+      image: bitnami/mongodb-exporter:0.43.1-debian-12-r10
+#      container_name: mongo-exporter
+      restart: always
+      ports:
+        - "9216:9216"
+      command:
+        - "--mongodb.uri=mongodb://mongo-service:27017/mydb"
+      depends_on:
+        - mongo-service
+      networks:
+        - java-prom
+
+    # rabbitmq + exporter
+    rabbitmq-service:
+      image: rabbitmq:3-management
+#      container_name: rabbitmq_monitoring
+      restart: always
+      ports:
+        - "5672:5672"   # queue
+        - "15672:15672" # ui
+        - "15692:15692" # monitoring
+      environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest
+      networks:
+        - java-prom
+
+    # Redis
+    redis-service:
+      image: redis:alpine
+#      container_name: redis_service
+      restart: always
+      ports:
+        - "6380:6379"
+      networks:
+        - java-prom
+
+    redis_exporter:
+      image: oliver006/redis_exporter
+#      container_name: redis_exporter
+      restart: always
+      ports:
+        - "9121:9121"
+      environment:
+        REDIS_ADDR: "redis-service:6379"
+      depends_on:
+        - redis-service
+      networks:
+        - java-prom
+
+    prometheus:
+      image: prom/prometheus
+#      container_name: prometheus
+      restart: always
+      volumes:
+        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+        - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+      ports:
+        - "9090:9090"
+      depends_on:
+        - postgres_exporter
+        - mongo-exporter
+        - rabbitmq-service
+        - redis_exporter
+        - alert_manager
+      networks:
+        - java-prom
+      
+    alert_manager:
+      image: prom/alertmanager:v0.25.0
+#      container_name: alertmanager
+      restart: always
+      ports:
+        - "9093:9093"
+      volumes:
+        - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      networks:
+        - java-prom
+
+    grafana:
+      image: grafana/grafana
+#      container_name: grafana
+      restart: always
+      ports:
+        - "3000:3000"
+      depends_on:
+        - prometheus
+      volumes:
+        - grafana_data:/var/lib/grafana
+      networks:
+        - java-prom
+
+networks:
+  java-prom:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  postgres_data:
+  mongo_data:

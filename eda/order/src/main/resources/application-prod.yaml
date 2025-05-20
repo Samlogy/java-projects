@@ -1,0 +1,33 @@
+server:
+  port: 4003
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/mydb
+
+  # RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+#    username: user1
+#    password: pass1
+#    ssl:
+#      enabled: true
+    username: guest
+    password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+
+#  cache: # Redis => CACHE
+#    type: redis
+#    data:
+#      redis:
+#        host: localhost # localhost
+#        port: 6379 # 6379
+#        password:
+#        time-to-live: 3600000  # Cache TTL (1 hour)

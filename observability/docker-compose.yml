@@ -1,0 +1,113 @@
+services:
+  app:
+    build:
+      context: . # Use the current directory as the build context
+      dockerfile: Dockerfile # Specify the Dockerfile to use
+    container_name: app-container
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - app_network
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  tempo:
+    image: grafana/tempo
+    # container_name: tempo
+    restart: unless-stopped
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./config/tempo/tempo.yml:/etc/tempo.yaml:ro
+      - ./config/tempo/tempo-data:/tmp/tempo
+    ports:
+      - "3200:3200" # Tempo
+      - "9411:9411" # zipkin
+    networks:
+        - app_network
+
+  loki:
+    image: grafana/loki:2.2.1
+    # container_name: loki-service
+    restart: unless-stopped
+    volumes:
+      - ./config/loki/loki.yml:/etc/loki/loki.yml
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki.yml
+    networks:
+      - app_network
+
+  promtail:
+    image: grafana/promtail:2.2.1
+    # container_name: promtail-service
+    volumes:     
+      - /var/log:/var/log               # Logs système
+      - ./src/main/resources/logs:/app/log/
+      - ./config/promtail/promtail.yml:/etc/promtail/promtail.yaml
+    command: -config.file=/etc/promtail/promtail.yaml
+    networks:
+      - app_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    # container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - app_network
+
+  node-exporter:
+    image: prom/node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    networks:
+      - app_network
+    expose:
+      - "9100"
+    depends_on:
+      - app 
+
+  grafana:
+    image: grafana/grafana
+    # container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    networks:
+      - app_network
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  alertmanager:
+    image: prom/alertmanager
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - app_network
+    depends_on:
+      - prometheus
+
+networks:
+  app_network:
+    driver: bridge

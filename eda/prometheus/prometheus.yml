@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 5s # scrape interval
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alert_manager:9093']
+
+rule_files:
+  - "alert.rules.yml"
+
+
+scrape_configs:
+  - job_name: 'product'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['product-service:4002']
+
+  - job_name: 'order'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['order-service:4003']
+
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: [ 'mongo-exporter:9216' ]
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+
+  - job_name: 'rabbitmq'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['rabbitmq-service:15692']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']

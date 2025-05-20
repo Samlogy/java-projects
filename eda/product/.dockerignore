@@ -1,0 +1,37 @@
+# Version control
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Development artifacts
+node_modules/
+npm-debug.log
+yarn-error.log
+*.log
+*.bak
+
+# Build output
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+test/
+__tests__/
+*.test.js
+jest.config.js
+
+#
+.prettierignore
+.prettierrc
+eslint.config.mjs
+
+# Docker files
+Dockerfile
+docker-compose.yml

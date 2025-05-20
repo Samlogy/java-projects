@@ -1,0 +1,64 @@
+server:
+  port: 8080
+  tomcat:
+    accesslog:
+      prefix: stdout
+      enabled: 'true'
+      buffered: 'false'
+      pattern: '{"ip": "%h", "user": "%l", "username": "%u", "time": "%t", "request":
+        "%r", "status":"%s", "responsesize": "%b"}'
+      directory: /dev
+
+spring:
+  application:
+    name: app
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  sql:
+    init:
+      mode: always
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+
+# logging:
+#   pattern:
+#     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+logging:
+  file:
+    path: src/main/resources/logs
+  level:
+    org: debug
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  zipkin:
+    tracing:
+      endpoint: "http://tempo:9411/api/v2/spans"
+  endpoint:
+    health:
+      show:
+        details: "always"
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+  tracing:
+    sampling:
+      probability: 1.0

@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-webflux
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/myFlux
+
+  r2dbc:
+    url: r2dbc:pool:postgresql://localhost:5432/mydb
+    username: myuser
+    password: password
+    properties:
+      schema: comments

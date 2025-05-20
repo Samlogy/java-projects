@@ -1,0 +1,28 @@
+server:
+  port: 4003
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://mongo-service:27017/mydb
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: '3600000'
+  redis:
+    host: redis-service
+    port: '6379'
+
+  # RabbitMQ
+  rabbitmq:
+    host: rabbitmq-service
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3

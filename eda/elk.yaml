@@ -1,0 +1,129 @@
+services:
+#  product-service:
+#    container_name: product_service
+#    build:
+#      context: ./product
+#      dockerfile: Dockerfile
+#    ports:
+#      - "4002:4002"
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=dev
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-service:5432/mydb
+#      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=prometheus
+#    depends_on:
+#      - postgres-service
+#      - rabbitmq-service
+#      - redis-service
+#    networks:
+#      - java-elk
+      
+  order-service:
+    container_name: order_service
+    build:
+      context: ./order
+      dockerfile: Dockerfile
+    ports:
+      - "4003:4003"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=mongodb://mongo-service:27017/mydb
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=prometheus
+    depends_on:
+      - postgres-service
+      - rabbitmq-service
+      - redis-service
+    networks:
+      - java-elk
+      
+  postgres-service:
+    image: postgres:16-alpine
+    container_name: postgres_service
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/data/postgres
+    networks:
+      - java-elk
+      
+  mongo-service:
+    container_name: mongo_service
+    image: mongo:4.4.14-rc0-focal
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+  #    environment:
+  #      MONGO_INITDB_ROOT_USERNAME: root
+  #      MONGO_INITDB_ROOT_PASSWORD:
+    networks:
+      - java-elk
+      
+  # rabbitmq + exporter
+  rabbitmq-service:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # queue
+      - "15672:15672" # ui
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - java-elk
+      
+  # Redis
+  redis-service:
+    image: redis:alpine
+    container_name: redis_service
+    restart: always
+    ports:
+      - "6380:6379"
+    networks:
+      - java-elk
+      
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.5
+    container_name: elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - java-elk
+      
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.5
+    container_name: logstash
+    restart: always
+    volumes:
+      - ./elk/product_logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./elk/order_logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "5000:5000"
+    networks:
+      - java-elk
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.5
+    container_name: kibana
+    restart: always
+    ports:
+      - "5601:5601"
+    networks:
+      - java-elk
+
+networks:
+  java-elk:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongo_data:

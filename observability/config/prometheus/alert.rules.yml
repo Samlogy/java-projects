@@ -1,0 +1,29 @@
+groups:
+  - name: spring-app-alerts
+    rules:
+      - alert: HighHTTP5xxErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[1m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taux d'erreurs 5xx élevé pour la Spring App"
+          description: "Plus de 5% de requêtes HTTP se soldent par des erreurs 5xx sur l'instance {{ $labels.instance }}"
+      - alert: HighJVMMemoryUsage
+        expr: jvm_memory_used_bytes / jvm_memory_max_bytes > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Utilisation élevée de la mémoire JVM"
+          description: "La mémoire utilisée dépasse 80% sur l'instance {{ $labels.instance }}"
+  - name: postgres-alerts
+    rules:
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL indisponible"
+          description: "Le serveur PostgreSQL ne répond pas sur l'instance {{ $labels.instance }}"

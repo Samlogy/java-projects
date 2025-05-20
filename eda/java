@@ -1,0 +1,177 @@
+
+**Todo TODAY**
+* fix lombok + mapstruct
+* rabbitmq: simple + advanced
+* Caching => Redis (read on cache, modify on cache + db)
+
+* fix swagger =>  a la fin cree une branche et tester swagger tout seul (enlever les dependances les apres les autres).
+* fix mapper => docker, return null data
+
+**Java/Spring:**
+* relationship
+** one to one
+** many to many
+** one to many
+
+* Testing
+** int
+
+** cucumber ?
+
+* Security: spring security + keycloak.
+* Transactional
+
+* CQRS => theory
+* EDA => theory
+
+
+**DONE:**
+* Swagger
+* Exceptions
+* adjuster Lombok
+* DTO, (map struct)
+* Valid input data
+* logging
+* monitoring + graph
+* monitoring advanced + graphs: rabbit, postgres, redis, ...
+* alerting => alertmanager + telegram
+* Testing
+** unit 
+** jacoco
+
+
+**Java Melody:** (monitoring)
+JavaMelody is a lightweight performance monitoring tool for Java applications. It helps track memory usage, SQL queries, HTTP requests, and more in real-time via a simple web UI.
+http://localhost:4002/monitoring
+check these metrics: 
+Memory Usage, Database Query Performance, Slow HTTP Requests, Garbage Collection Performance.
+
+**jmeter:** (load/perf testing)
+JMeter is an open-source load testing tool that simulates multiple users accessing an application, measuring its performance under stress.
+https://howtodoinjava.com/java/library/jmeter-beginners-tutorial
+https://github.com/tufangorel/spring-boot-maven-jmeter-performance-test
+
+check these:
+Response time (ms), Throughput (requests/sec), Error rate (%)
+
+**Logging:**
+https://signoz.io/guides/default-logging-file-for-spring-boot-application/#how-do-i-change-the-default-log-file-location-in-spring-boot
+
+```bash
+# Dev Mode => file + console
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Prod Mode => file + elk + console
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
+```
+
+**RabbitMQ:**
+
+```bash
+# test => new produce message
+curl -X POST "http://localhost:4003/api/orders/rabbitmq/producer?message=order123"
+
+# test fail case
+curl -X GET "http://localhost:4003/api/orders/rabbitmq/consumer?message=fail"
+
+# add user + permission => rabbitmq inside vhost
+docker exec -it rabbitmq_monitoring rabbitmqctl add_user user1 pass1
+docker exec -it rabbitmq_monitoring rabbitmqctl set_permissions -p / user1 ".*" ".*" ".*"
+```
+
+**Monitoring:**
+```bash
+tester la connectivité: host + port
+telnet logstash 5000
+
+## endpoint exposed by actuator on spring app
+http://localhost:4002/actuator/prometheus
+
+## access prometheus
+http://localhost:9090/
+
+## access grafana
+## username/password: admin/passwor
+http://localhost:3000
+
+
+## metrics => prometheus
+jvm_memory_used_bytes
+http_server_requests_seconds_count
+
+# target
+## dans docker:
+ex: spring-app:4002
+
+le network pour prometheus.yaml
+## si windows, mac
+host.docker.internal
+ex: host.docker.internal:4002
+
+## si linux + recuprer l'ip 
+ip -4 addr show docker0
+ex: 172.17.0.1:4002
+
+# access mongodb metrics:
+# MongoDB:
+http://localhost:27017
+
+# MongoDB Exporter
+http://localhost:9216/metrics
+
+# access postgres metrics:
+docker run -d --name postgres_exporter -p 9187:9187 \
+    -e DATA_SOURCE_NAME="postgresql://myuser:password@localhost:5432/mydb?sslmode=disable" \
+    bitnami/postgres-exporter:0.17.1-debian-12-r1
+    
+http://localhost:9187/metrics
+
+
+# access redis metrics:
+docker run -d --name redis_exporter -p 9121:9121 oliver006/redis_exporter
+
+http://localhost:9121/metrics
+
+
+# access rabbitmq metrics:
+docker run -d --name rabbitmq_monitoring -p 5672:5672 -p 15672:15672 -p 15692:15692 \
+    rabbitmq:3-management
+    
+## enable rabbitmq access metrics
+docker exec -it rabbitmq_monitoring rabbitmq-plugins enable rabbitmq_prometheus
+
+http://localhost:15692/metrics
+
+# grafana dashboards:
+Spring Boot Actuator: ID 4701
+PostgreSQL: ID 9628
+RabbitMQ: ID 10991
+Redis: ID 763
+
+```
+
+**Alerting:**
+
+```bash
+# access alert manager
+http://localhost:9093
+```
+
+**Testing:**
+```bash
+# run all unit tests
+mvn test
+
+# run coverage tests (run unit test first)
+mvn clean test
+## check this location for the report: target/jacoco.exec
+
+# run integration tests
+mvn verify
+```
+
+testing coverage:
+
+
+
+
